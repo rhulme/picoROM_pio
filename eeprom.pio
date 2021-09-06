@@ -1,0 +1,64 @@
+.program eeprom
+
+.define PUBLIC addr_bus_width 4
+.define PUBLIC data_bus_width 4
+
+    ; Get top-most address bits in memory of the array holding the EEPROM
+    ; data and put them in the OSR
+    pull block
+
+    ; Now move them into the X scratch register for future use
+    out x, 32
+
+.wrap_target
+    ;wait 0 pin 1
+    ; Shift the address bus into the ISR
+    in pins, addr_bus_width
+    
+    ; Shift in the top-most address bits of the array holding the EEPROM data
+    ; This will cause auto-push to push the ISR to our RX FIFO
+    in x, (32 - addr_bus_width)
+
+    ; Auto-pull the data from the TX FIFO and pu it on the data bus
+    out pins, data_bus_width
+.wrap
+    
+    
+% c-sdk {
+static inline void eeprom_init(PIO pio, uint sm, uint offset, uint pinA0, uint pinD0)
+{
+    pio_sm_config c = eeprom_program_get_default_config(offset);
+
+    // Map the state machine's IN pin group to the address bus
+    sm_config_set_in_pins(&c, pinA0);
+
+    // Assign the address bus pins to PIO duty
+    for(uint idx = 0; idx < eeprom_addr_bus_width; idx++)
+        pio_gpio_init(pio, pinA0 + idx);
+
+    // Set the address bus pins to 'input'
+    pio_sm_set_consecutive_pindirs(pio, sm, pinA0, eeprom_addr_bus_width, false);
+
+    // Map the state machine's OUT pin group to the address bus
+    sm_config_set_out_pins(&c, pinD0, eeprom_data_bus_width);
+
+    // Assign the data bus pins to PIO duty
+    for(uint idx = 0; idx < eeprom_data_bus_width; idx++)
+        pio_gpio_init(pio, pinD0 + idx);
+
+    // Set the address bus pins to 'output'
+    pio_sm_set_consecutive_pindirs(pio, sm, pinD0, eeprom_data_bus_width, true);
+
+    // Enable auto-push after 32 bits
+    sm_config_set_in_shift(&c, true, true, 32);
+
+    // Enable auto-pull after 'eeprom_data_bus_width' bits
+    sm_config_set_out_shift(&c, true, true, eeprom_data_bus_width);
+    
+    // Load our configuration, and jump to the start of the program
+    pio_sm_init(pio, sm, offset, &c);
+    
+    // Set the state machine running
+    pio_sm_set_enabled(pio, sm, true);
+}
+%}
