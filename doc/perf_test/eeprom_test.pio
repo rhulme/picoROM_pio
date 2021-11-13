@@ -1,0 +1,32 @@
+.program eeprom_test
+
+.define PUBLIC bus_width 9
+
+    ; Get the address from the FIFO
+    pull block
+
+    ; And put it on the bus
+    out pins, bus_width [31]
+    nop [5]
+
+% c-sdk {
+static inline void eeprom_test_init(PIO pio, uint sm, uint offset, uint pinA0) {
+    pio_sm_config c = eeprom_test_program_get_default_config(offset);
+
+    // Map the state machine's OUT pin group to the address bus
+    sm_config_set_out_pins(&c, pinA0, eeprom_test_bus_width);
+
+    // Assign the address bus pins to PIO duty
+    for(uint idx = 0; idx < eeprom_test_bus_width; idx++)
+        pio_gpio_init(pio, pinA0 + idx);
+
+    // Set the address bus pins to 'output'
+    pio_sm_set_consecutive_pindirs(pio, sm, pinA0, eeprom_test_bus_width, true);
+
+    // Load our configuration, and jump to the start of the program
+    pio_sm_init(pio, sm, offset, &c);
+
+    // Set the state machine running
+    pio_sm_set_enabled(pio, sm, true);
+}
+%}
