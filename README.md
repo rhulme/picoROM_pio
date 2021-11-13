@@ -19,7 +19,7 @@ If a lower guaranteed lag is required, the chip can be overclocked by increasing
 
 
 ***
-***Since I approached the implementation as an exercise in using PIO and DMA without any actual use for it, I unfortunately didn't compare the results properly with the original implementation.  I've now done that [here](docs/README.md), which should be read before blindly using the code presented here.***
+***Since I approached the implementation as an exercise in using PIO and DMA without any actual use for it, I unfortunately didn't compare the results properly with the original implementation.  I've now done that [here](doc/README.md), which should be read before blindly using the code presented here.***
 ***
 
 
