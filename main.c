@@ -51,7 +51,6 @@ void init()
     channel_config_set_transfer_data_size(&c, DMA_SIZE_32);
     channel_config_set_read_increment(&c, false);
     channel_config_set_write_increment(&c, false);
-    channel_config_set_chain_to(&c, data_chan);
     channel_config_set_dreq(&c, pio_get_dreq(pio, smAddr, false));
 
     dma_channel_configure(
